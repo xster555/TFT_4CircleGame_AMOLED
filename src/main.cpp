@@ -20,34 +20,74 @@ OneButton upButton(UP_BTN, true);
 OneButton downButton(DOWN_BTN, true);
 
 int gameRound = 0;
-int gameState = 0; // 0: 预备 1: 游戏中 2: 结束
+int gameState = GS_PRE_GAME; // 0: 预备 1: 游戏中 2: 结束
 int inputCol = 3;
 bool isPlayer1 = true;
+bool isTie = false;
+
+void addLogo()
+{
+  infoBoard.fillRect(0, 160, infoBoard.width(), 2, TFT_DARKGREY);
+  infoBoard.setTextSize(3);
+  infoBoard.setTextDatum(TL_DATUM);
+  infoBoard.drawString("Developed by", 10, 170);
+  infoBoard.setTextSize(4);
+  infoBoard.drawString("XSTER", 10, 202);
+
+  infoBoard.pushToSprite(&bg, inputRow.width(), 0);
+}
 
 /***** 游戏相关的方法 *****/
+// 展示游戏结束界面
 void displayGameOver()
 {
   inputRow.fillSprite(TFT_DARKGREEN);
-  // inputRow.pushSprite(0, 0);
-  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)inputRow.getPointer());
+  inputRow.pushToSprite(&bg, 0, 0);
 
+  infoBoard.setTextColor(TFT_WHITE, TFT_BLACK);
   infoBoard.fillSprite(TFT_BLACK);
-  infoBoard.setTextSize(2);
+  infoBoard.setTextSize(3);
   infoBoard.setTextDatum(TC_DATUM);
   infoBoard.drawString("Game Over", infoBoard.width() / 2, 10);
-  infoBoard.drawString("WINNER", infoBoard.width() / 2, 50);
-  if (isPlayer1)
-    infoBoard.drawString("Player 1", infoBoard.width() / 2, 70);
+  if (isTie)
+  {
+    infoBoard.drawString("TIE", infoBoard.width() / 2, 70);
+  }
   else
-    infoBoard.drawString("Player 2", infoBoard.width() / 2, 70);
+  {
+    infoBoard.drawString("WINNER", infoBoard.width() / 2, 70);
+    if (isPlayer1)
+      infoBoard.drawString("Player 1", infoBoard.width() / 2, 100);
+    else
+      infoBoard.drawString("Player 2", infoBoard.width() / 2, 100);
+  }
 
-  // infoBoard.pushSprite(inputRow.width(), 0);
-  lcd_PushColors(inputRow.width(), 0, WIDTH, HEIGHT, (uint16_t *)inputRow.getPointer());
+  infoBoard.pushToSprite(&bg, inputRow.width(), 0);
+  addLogo();
+  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
 }
 
-// 更新信息面板
-void displayGameStatus(bool doPush)
+// 展示游戏开始前界面
+void displayPreGameStatus()
 {
+  infoBoard.fillSprite(TFT_WHITE);
+  infoBoard.setTextColor(TFT_BLACK, TFT_WHITE);
+  infoBoard.setTextSize(3);
+  infoBoard.setTextDatum(TC_DATUM);
+  infoBoard.drawString("Double tap", infoBoard.width() / 2, 30);
+  infoBoard.drawString("to play", infoBoard.width() / 2, 80);
+
+  infoBoard.pushToSprite(&bg, inputRow.width(), 0);
+  addLogo();
+  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
+}
+
+// 展示游戏信息界面
+void displayGameStatus()
+{
+  infoBoard.fillSprite(TFT_WHITE);
+  infoBoard.setTextColor(TFT_BLACK, TFT_WHITE);
+  infoBoard.setTextDatum(TL_DATUM);
   infoBoard.setTextSize(3);
   infoBoard.drawString("Turn: ", 5, 5);
 
@@ -56,36 +96,36 @@ void displayGameStatus(bool doPush)
   else
     infoBoard.drawString("Player2", 5, 30);
 
-  if (doPush)
-  {
-    // infoBoard.pushSprite(inputRow.width(), 0);
-    infoBoard.pushToSprite(&bg, inputRow.width(), 0);
-    lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
-  }
+  // infoBoard.pushSprite(inputRow.width(), 0);
+  infoBoard.pushToSprite(&bg, inputRow.width(), 0);
+  addLogo();
+  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
 }
 
-void displayErrorState(bool doPush)
+// 展示所选列已满提示界面
+void displayColFull()
 {
-  inputRow.fillSprite(TFT_DARKGREEN);
-  // inputRow.pushSprite(0, 0);
-  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)inputRow.getPointer());
+  infoBoard.fillSprite(TFT_WHITE);
+  infoBoard.setTextSize(3);
+  infoBoard.drawString("Column full!!!", 5, 5);
 
-  infoBoard.fillSprite(TFT_BLACK);
-  infoBoard.setTextSize(2);
-  infoBoard.setTextDatum(TC_DATUM);
-  infoBoard.drawString("ERROR", infoBoard.width() / 2, 10);
-  infoBoard.drawString("ERROR", infoBoard.width() / 2, 30);
-  infoBoard.drawString("ERROR", infoBoard.width() / 2, 50);
+  infoBoard.drawString("Try again", 5, 30);
 
   // infoBoard.pushSprite(inputRow.width(), 0);
-  lcd_PushColors(inputRow.width(), 0, WIDTH, HEIGHT, (uint16_t *)infoBoard.getPointer());
+  infoBoard.pushToSprite(&bg, inputRow.width(), 0);
+  addLogo();
+  lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
+
+  delay(800);
+  displayGameStatus();
 }
 
+// 更新游戏面板
 void updateBoard()
 {
   Serial.println("Updating board");
 
-  gameBoard.fillSprite(TFT_DARKGREY);
+  gameBoard.fillSprite(TFT_LIGHTGREY);
 
   // Draw the horizontal and vertical grid
   for (int i = 0; i < 6; i++)
@@ -125,6 +165,7 @@ void updateBoard()
   lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)bg.getPointer());
 }
 
+// 更新输入行
 void updateInputRow()
 {
   Serial.println("Updating input row");
@@ -144,11 +185,14 @@ void updateInputRow()
   Serial.println("Pushing lcd...Done");
 }
 
+// 清空游戏面板
 void cleanGameBoard()
 {
-  inputCol = 0;
+  inputCol = 3;
   isPlayer1 = true;
-  gameState = 0;
+  gameState = GS_PRE_GAME;
+  gameRound = 0;
+  isTie = false;
 
   for (int row = 0; row < 6; row++)
   {
@@ -159,26 +203,13 @@ void cleanGameBoard()
   }
   updateInputRow();
   updateBoard();
+  displayPreGameStatus();
 }
 
-void createGame()
-{
-  gameBoard.createSprite(CELL_SIZE * 7, CELL_SIZE * 6);
-  inputRow.createSprite(CELL_SIZE * 7, HEIGHT - gameBoard.height());
-
-  // gameBoard.setRotation(3);
-  infoBoard.createSprite(WIDTH - gameBoard.width(), HEIGHT);
-  // infoBoard.setRotation(3);
-
-  updateInputRow();
-  updateBoard();
-}
-
+// 上按键点击事件，左移棋子
 void upClick()
 {
-  Serial.println("Up click");
-  Serial.println(gameState);
-  if (gameState == 2)
+  if (gameState == GS_GAME_OVER)
     return;
 
   inputCol--;
@@ -190,11 +221,10 @@ void upClick()
   updateInputRow();
 }
 
+// 下按键点击事件，右移棋子
 void downClick()
 {
-  Serial.println("Down click");
-  Serial.println(gameState);
-  if (gameState == 2)
+  if (gameState == GS_GAME_OVER)
     return;
 
   inputCol++;
@@ -206,6 +236,7 @@ void downClick()
   updateInputRow();
 }
 
+// 检测是否胜利
 bool checkForWin()
 {
   // Check for win
@@ -296,16 +327,15 @@ bool checkForWin()
   return false;
 }
 
+// 棋子落下
 void confirmPlay()
 {
-  if (gameState == 0)
-    gameState = 1;
-
-  gameRound++;
-
-  if (gameState == 2)
+  if (gameState == GS_PRE_GAME)
+    gameState = GS_PLAYING;
+  else if (gameState == GS_GAME_OVER)
     return;
 
+  bool colFull = true;
   for (int row = 5; row >= 0; row--)
   {
     if (gameData[row][inputCol] == 0)
@@ -315,21 +345,16 @@ void confirmPlay()
       else
         gameData[row][inputCol] = 2;
 
+      colFull = false;
       break;
     }
   }
 
-  // print game board
-  for (int row = 0; row < 6; row++)
+  if (colFull)
   {
-    for (int col = 0; col < 7; col++)
-    {
-      Serial.print(gameData[row][col]);
-      Serial.print(" ");
-    }
-    Serial.println();
+    displayColFull();
+    return;
   }
-  Serial.println();
 
   updateBoard();
 
@@ -337,33 +362,45 @@ void confirmPlay()
 
   if (winnerFound) // 发现有赢家，结束
   {
-    gameState = 2; // 结束游戏
+    gameState = GS_GAME_OVER; // 结束游戏
     displayGameOver();
   }
   else // 未发现赢家，继续游戏
   {
     isPlayer1 = !isPlayer1;
-
+    displayGameStatus();
     updateInputRow();
+    gameRound++;
+    if (gameRound >= 42)
+    {
+      gameState = GS_GAME_OVER;
+      isTie = true;
+    }
   }
 }
 
+// 初始化按键
 void setupGameButtons()
 {
-  upButton.attachClick(upClick);
-  // upButton.attachDoubleClick(upDoubleClick, &upButton);
-  // upButton.attachLongPressStart(upLongPressStart, &upButton);
-  // upButton.attachDuringLongPress(upDuringLongPress, &upButton);
-  // upButton.attachLongPressStop(upLongPressStop, &upButton);
-  // upButton.setLongPressIntervalMs(1000);
+  upButton.attachClick(upClick);                 // 左移棋子
+  upButton.attachLongPressStart(cleanGameBoard); // 重置游戏
+  upButton.setLongPressIntervalMs(800);          // 设置长按时间
 
-  downButton.attachClick(downClick);
-  downButton.attachDoubleClick(confirmPlay);
-  // downButton.attachLongPressStart(downLongPressStart, &downButton);
-  // downButton.attachDuringLongPress(downDuringLongPress, &downButton);
-  // downButton.attachLongPressStop(downLongPressStop, &downButton);
-  // downButton.setLongPressIntervalMs(1000);
+  downButton.attachClick(downClick);         // 右移棋子
+  downButton.attachDoubleClick(confirmPlay); // 释放棋子
 }
+
+// 初始化游戏
+void setupGame()
+{
+  gameBoard.createSprite(CELL_SIZE * 7, CELL_SIZE * 6);
+  inputRow.createSprite(CELL_SIZE * 7, HEIGHT - gameBoard.height());
+  infoBoard.createSprite(WIDTH - gameBoard.width(), HEIGHT);
+
+  updateInputRow();
+  updateBoard();
+}
+
 /***** 游戏相关的方法（end) *****/
 
 void setup()
@@ -376,10 +413,12 @@ void setup()
   lcd_setRotation(3);
 
   bg.createSprite(WIDTH, HEIGHT);
-  bg.fillSprite(TFT_WHITE);
+  bg.fillSprite(TFT_BLACK);
   bg.setSwapBytes(1);
 
-  createGame();
+  setupGame();
+
+  displayPreGameStatus();
 }
 
 void loop()
@@ -387,28 +426,29 @@ void loop()
   upButton.tick();
   downButton.tick();
 
-  if (gameState == 2)
+  if (gameState == GS_GAME_OVER)
   {
-    // flash winner pos
-    for (int i = 0; i < 4; i++)
+
+    displayGameOver();
+    if (!isTie)
     {
-      gameData[winnerPos[i][0]][winnerPos[i][1]] = 3;
-      updateBoard();
-      delay(100);
-      if (isPlayer1)
+      // 提示赢家棋子位置
+      for (int i = 0; i < 4; i++)
       {
-        gameData[winnerPos[i][0]][winnerPos[i][1]] = 1;
+        gameData[winnerPos[i][0]][winnerPos[i][1]] = 3;
+        updateBoard();
+        delay(100);
+        if (isPlayer1)
+        {
+          gameData[winnerPos[i][0]][winnerPos[i][1]] = 1;
+        }
+        else
+        {
+          gameData[winnerPos[i][0]][winnerPos[i][1]] = 2;
+        }
+        updateBoard();
+        delay(100);
       }
-      else
-      {
-        gameData[winnerPos[i][0]][winnerPos[i][1]] = 2;
-      }
-      updateBoard();
-      delay(100);
     }
-  }
-  else if (gameState == 1)
-  {
-    displayGameStatus(true);
   }
 }
