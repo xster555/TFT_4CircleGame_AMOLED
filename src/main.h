@@ -45,5 +45,3 @@ void setupGameButtons();
 // 初始化游戏
 void setupGame();
 /***** 游戏相关的方法（end) *****/
-
-void checkPair();
