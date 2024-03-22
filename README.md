@@ -18,4 +18,4 @@
 4. 测试上传
 
 ## 更多教程
-<a href="#">视频教程</a>
+<a href="https://www.bilibili.com/video/BV1XJ4m1a7d7/?share_source=copy_web&vd_source=3c57c402ce6608c6e7e068397d883cea">视频教程</a>
